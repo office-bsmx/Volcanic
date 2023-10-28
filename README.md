@@ -13,3 +13,6 @@ $ go build
 $ ./volcanic example
              ^ directory with main.lua 
 ```
+# Benchmark
+ This framework was tested with wrk on  *Mac mini (Late 2014), Intel Core i5*, Lua hot-reload is enabled
+ ![alt text](https://github.com/office-bsmx/Volcanic/blob/main/benchmark.png?raw=true)
