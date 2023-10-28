@@ -2,6 +2,7 @@
  Simple and fast lua webserver written in Go
 
 ![alt text](https://github.com/office-bsmx/Volcanic/blob/main/art.jpg?raw=true)
+<sub>Art generated with AI :robot:</sub>
 
 # Building
  ```console
