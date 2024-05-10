@@ -1,9 +1,8 @@
 package main
 
 import (
-	"errors"
-	"strings"
-	"volcanic/internal"
+	"io/ioutil"
+	"log"
 
 	"github.com/gofiber/fiber/v2"
 	lua "github.com/yuin/gopher-lua"
@@ -12,11 +11,13 @@ import (
 func main() {
 	L := lua.NewState()
 	if err := L.DoFile("main.lua"); err != nil {
-		internal.Throw(2)
+		log.Fatal(err)
 	}
+	script_content, _ := ioutil.ReadFile("main.lua")
+	script_string := string(script_content)
 	entry_point := L.GetGlobal("Main")
 	if entry_point == lua.LNil {
-		internal.Throw(3, errors.New("undefined lua entry point"))
+		log.Fatal("undefined lua entry point")
 	}
 	L.Close()
 	app := fiber.New(fiber.Config{
@@ -26,21 +27,16 @@ func main() {
 	app.All("/*", func(c *fiber.Ctx) error {
 		L := lua.NewState()
 		defer L.Close()
-		if err := L.DoFile("main.lua"); err != nil {
+		if err := L.DoString(script_string); err != nil {
 			return c.SendString("error!")
 		}
-		trim_path := strings.Trim(c.Path(), "/")
-		res_arr := strings.Split(trim_path, "/")
-		pass_table := lua.LTable{}
-		for _, v := range res_arr {
-			pass_table.Append(lua.LString(string(v)))
-		}
+		pass_route := lua.LString(string(c.Path()))
 		if err := L.CallByParam(lua.P{
 			Fn:      L.GetGlobal("Main"),
 			NRet:    1,
 			Protect: true,
-		}, &pass_table); err != nil {
-			internal.Throw(3, err)
+		}, pass_route); err != nil {
+			log.Fatal(err)
 		}
 		ret := L.Get(-1) // returned value
 		L.Pop(1)
@@ -50,5 +46,5 @@ func main() {
 			return c.SendString("error!")
 		}
 	})
-	internal.Startup(app)
+	app.Listen(":8000")
 }
