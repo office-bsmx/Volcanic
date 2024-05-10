@@ -14,7 +14,6 @@ func main() {
 		log.Fatal(err)
 	}
 	script_content, _ := ioutil.ReadFile("main.lua")
-	script_string := string(script_content)
 	entry_point := L.GetGlobal("Main")
 	if entry_point == lua.LNil {
 		log.Fatal("undefined lua entry point")
@@ -27,7 +26,7 @@ func main() {
 	app.All("/*", func(c *fiber.Ctx) error {
 		L := lua.NewState()
 		defer L.Close()
-		if err := L.DoString(script_string); err != nil {
+		if err := L.DoString(string(script_content)); err != nil {
 			return c.SendString("error!")
 		}
 		pass_route := lua.LString(string(c.Path()))
