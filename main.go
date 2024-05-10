@@ -10,6 +10,7 @@ import (
 
 func main() {
 	L := lua.NewState()
+
 	if err := L.DoFile("main.lua"); err != nil {
 		log.Fatal(err)
 	}
