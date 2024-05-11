@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
@@ -14,21 +13,22 @@ func main() {
 	if err := L.DoFile("main.lua"); err != nil {
 		log.Fatal(err)
 	}
-	script_content, _ := ioutil.ReadFile("main.lua")
 	entry_point := L.GetGlobal("Main")
 	if entry_point == lua.LNil {
 		log.Fatal("undefined lua entry point")
 	}
 	L.Close()
+
 	app := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
 		CaseSensitive:         true,
 	})
+
 	app.All("/*", func(c *fiber.Ctx) error {
 		L := lua.NewState()
 		defer L.Close()
-		if err := L.DoString(string(script_content)); err != nil {
-			return c.SendString("error!")
+		if err := L.DoFile("main.lua"); err != nil {
+			return c.SendStatus(500)
 		}
 		pass_route := lua.LString(string(c.Path()))
 		if err := L.CallByParam(lua.P{
@@ -40,10 +40,11 @@ func main() {
 		}
 		ret := L.Get(-1) // returned value
 		L.Pop(1)
-		if str, ok := ret.(lua.LString); ok {
-			return c.SendString(string(str))
+		if table, ok := ret.(*lua.LTable); ok {
+			c.Context().SetContentType(string(table.RawGetString("type").(lua.LString)))
+			return c.SendString(string(table.RawGetString("body").(lua.LString)))
 		} else {
-			return c.SendString("error!")
+			return c.SendStatus(500)
 		}
 	})
 	app.Listen(":8000")
